@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Factory Method Demo — LMS</title>
+  <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --accent:#2b6ef6;
+      --muted:#6b7280;
+      --glass: rgba(43,110,246,0.06);
+      --radius:12px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,var(--bg),#eef3ff 60%);
+      color:#0f172a;
+      -webkit-font-smoothing:antialiased;
+      padding:24px;
+    }
+
+    .container{
+      max-width:960px;
+      margin:0 auto;
+      display:grid;
+      gap:18px;
+      grid-template-columns: 1fr;
+    }
+
+    header h1{margin:0 0 6px 0;font-size:1.6rem;}
+    .lead{margin:0;color:var(--muted);font-size:0.95rem;}
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow: 0 6px 18px rgba(14,30,80,0.06);
+    }
+
+    .controls .row{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+    .controls label{font-weight:600;font-size:0.85rem;}
+    .controls input,.controls select{
+      border:1px solid #e6eefb;
+      padding:10px 12px;
+      border-radius:8px;
+      font-size:0.95rem;
+      background:#fbfdff;
+    }
+    .controls input:focus,.controls select:focus{box-shadow:0 0 0 4px var(--glass)}
+
+    .actions{display:flex;gap:10px;align-items:center;}
+    button{
+      background:var(--accent);
+      color:white;
+      border: none;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+    }
+    button.ghost{background:transparent;color:var(--muted);border:1px solid #e6eefb;}
+    button:active{transform:translateY(1px)}
+
+    .output h2, .explain h2{margin-top:0}
+    .objects-list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:10px;
+      max-height:320px;
+      overflow:auto;
+      padding-right:6px;
+    }
+
+    .object-card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), #fbfdff);
+      border:1px solid #edf4ff;
+      padding:10px;
+      border-radius:10px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .object-left{flex:1}
+    .object-title{font-weight:700}
+    .object-meta{font-size:0.85rem;color:var(--muted);margin-top:6px}
+    .object-json{
+      font-family:ui-monospace, monospace;
+      background:#f8fafc;
+      padding:8px;
+      border-radius:8px;
+      margin-top:8px;
+      font-size:0.82rem;
+      color:#0b1220;
+      white-space:pre-wrap;
+      max-width:60%;
+    }
+
+    footer{text-align:center;color:var(--muted);font-size:0.82rem;margin:6px 0 18px 0}
+    @media (max-width:760px){
+      .object-json{max-width:100%}
+      .actions{flex-direction:column;align-items:stretch}
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>Factory Method Pattern — Interactive Demo</h1>
+      <p class="lead">Select a domain and an item type to generate objects without exposing creation logic.</p>
+    </header>
+
+    <section class="controls card">
+      <div class="row">
+        <label for="domain">Domain</label>
+        <select id="domain">
+          <option value="food">Food Delivery App</option>
+          <option value="bank">Banking App</option>
+          <option value="ecom">E-commerce App</option>
+          <option value="ride">Ride-Hailing App</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="type">Type</label>
+        <select id="type"></select>
+      </div>
+
+      <div class="row">
+        <label for="nameInput">Name / Identifier</label>
+        <input id="nameInput" placeholder="e.g., John Doe, Order#123, Acc#456" />
+      </div>
+
+      <div class="row actions">
+        <button id="createBtn">Create Object</button>
+        <button id="clearBtn" class="ghost">Clear Created Objects</button>
+      </div>
+    </section>
+
+    <section class="output card">
+      <h2>Created Objects</h2>
+      <div id="objectsList" class="objects-list"></div>
+    </section>
+
+    <section class="explain card">
+      <h2>How Factory Method Helps</h2>
+      <p>The Factory Method centralizes object creation in one place, so the rest of the app only asks the factory for instances and doesn't need to call multiple <code>new</code> statements. This makes code easier to extend and test.</p>
+      <ul>
+        <li>Add new types without changing client code.</li>
+        <li>Keep creation logic in one factory.</li>
+        <li>Cleaner client code: call <code>factory.create()</code> instead of many <code>new</code> lines.</li>
+      </ul>
+    </section>
+
+    <footer>
+      <small>Factory Method Demo • LMS Example • Designed for teaching</small>
+    </footer>
+  </main>
+
+  <script>
+    // === Classes ===
+    class Customer{constructor({name}){this.type='Customer';this.name=name||'Anonymous';}}
+    class DeliveryPartner{constructor({name}){this.type='DeliveryPartner';this.name=name||'DP';}}
+    class Restaurant{constructor({name}){this.type='Restaurant';this.name=name||'Restaurant';}}
+
+    class SavingsAccount{constructor({name}){this.type='SavingsAccount';this.holder=name||'Holder';}}
+    class CurrentAccount{constructor({name}){this.type='CurrentAccount';this.holder=name||'Holder';}}
+    class LoanAccount{constructor({name}){this.type='LoanAccount';this.holder=name||'Holder';}}
+
+    class Electronics{constructor({name}){this.type='Electronics';this.title=name||'Gadget';}}
+    class Clothing{constructor({name}){this.type='Clothing';this.title=name||'Cloth';}}
+    class Book{constructor({name}){this.type='Book';this.title=name||'Book';}}
+
+    class MiniRide{constructor({name}){this.type='Mini';this.driver=name||'Driver';}}
+    class SedanRide{constructor({name}){this.type='Sedan';this.driver=name||'Driver';}}
+    class SUVRide{constructor({name}){this.type='SUV';this.driver=name||'Driver';}}
+    class AutoRide{constructor({name}){this.type='Auto';this.driver=name||'Driver';}}
+
+    // === Factories ===
+    const Factories={
+      food:{types:{Customer:d=>new Customer(d),DeliveryPartner:d=>new DeliveryPartner(d),Restaurant:d=>new Restaurant(d)}},
+      bank:{types:{SavingsAccount:d=>new SavingsAccount(d),CurrentAccount:d=>new CurrentAccount(d),LoanAccount:d=>new LoanAccount(d)}},
+      ecom:{types:{Electronics:d=>new Electronics(d),Clothing:d=>new Clothing(d),Book:d=>new Book(d)}},
+      ride:{types:{Mini:d=>new MiniRide(d),Sedan:d=>new SedanRide(d),SUV:d=>new SUVRide(d),Auto:d=>new AutoRide(d)}}
+    };
+
+    function createObject(domain,type,payload={}){return Factories[domain].types[type](payload);}
+
+    // === UI ===
+    const domainSelect=document.getElementById('domain');
+    const typeSelect=document.getElementById('type');
+    const createBtn=document.getElementById('createBtn');
+    const clearBtn=document.getElementById('clearBtn');
+    const objectsList=document.getElementById('objectsList');
+    const nameInput=document.getElementById('nameInput');
+
+    let created=[];
+
+    function populateTypes(domain){
+      typeSelect.innerHTML='';
+      Object.keys(Factories[domain].types).forEach(t=>{
+        const opt=document.createElement('option');
+        opt.value=t;opt.textContent=t;typeSelect.appendChild(opt);
+      });
+    }
+
+    function render(){
+      objectsList.innerHTML='';
+      if(created.length===0){
+        objectsList.innerHTML='<div class="object-card">No objects yet</div>';
+        return;
+      }
+      created.forEach((obj,i)=>{
+        const card=document.createElement('div');card.className='object-card';
+        const left=document.createElement('div');left.className='object-left';
+        left.innerHTML=`<div class="object-title">${obj.type}</div>
+                        <div class="object-meta">${JSON.stringify(obj)}</div>`;
+        card.appendChild(left);
+        const del=document.createElement('button');del.textContent='Delete';del.style.background='#ef4444';
+        del.onclick=()=>{created.splice(i,1);render();};
+        card.appendChild(del);
+        objectsList.appendChild(card);
+      });
+    }
+
+    domainSelect.addEventListener('change',()=>populateTypes(domainSelect.value));
+    createBtn.addEventListener('click',()=>{
+      const obj=createObject(domainSelect.value,typeSelect.value,{name:nameInput.value});
+      created.unshift(obj);render();nameInput.value='';
+    });
+    clearBtn.addEventListener('click',()=>{created=[];render();});
+
+    // init
+    populateTypes(domainSelect.value);
+    render();
+  </script>
+</body>
+</html>
